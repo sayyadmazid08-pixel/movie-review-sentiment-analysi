@@ -1,0 +1,235 @@
+import numpy as np
+import pandas as pd
+import re 
+import nltk
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
+from sklearn.feature_extraction.text import TfidfVectorizer
+data = {
+    "text": [
+        "This movie is amazing",
+        "I love this product",
+        "The food is very delicious",
+        "The service was excellent",
+        "I am very happy",
+        "This phone works perfectly",
+        "The experience was wonderful",
+        "I really enjoyed this movie",
+        "The product is fantastic",
+        "The quality is very good",
+        "This is a great experience",
+        "I like this restaurant",
+        "The delivery was excellent",
+        "The staff was friendly",
+        "Everything was perfect",
+        "I highly recommend this",
+        "The performance is excellent",
+        "The movie was interesting",
+        "I am satisfied with the product",
+        "This app is very useful",
+
+        "This movie is terrible",
+        "I hate this product",
+        "The food tastes awful",
+        "The service was horrible",
+        "I am very disappointed",
+        "This phone works badly",
+        "The experience was terrible",
+        "I did not enjoy this movie",
+        "The product is useless",
+        "The quality is very poor",
+        "This is a bad experience",
+        "I dislike this restaurant",
+        "The delivery was late",
+        "The movie was boring",
+        "I am unhappy with the product",
+        "This app is very slow",
+        "The staff was rude",
+        "Everything was disappointing",
+        "I do not recommend this",
+        "The performance is poor"
+    ],
+
+    "sentiment": [
+        "Positive", "Positive", "Positive", "Positive",
+        "Positive", "Positive", "Positive", "Positive",
+        "Positive", "Positive", "Positive", "Positive",
+        "Positive", "Positive", "Positive", "Positive",
+        "Positive", "Positive", "Positive", "Positive",
+
+        "Negative", "Negative", "Negative", "Negative",
+        "Negative", "Negative", "Negative", "Negative",
+        "Negative", "Negative", "Negative", "Negative",
+        "Negative", "Negative", "Negative", "Negative",
+        "Negative", "Negative", "Negative", "Negative"
+    ]
+}
+
+df=pd.DataFrame(data)
+df
+
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r"[^a-zA-Z\s]", "", text)
+    return text
+df["text"]=df["text"].apply(clean_text)
+
+
+stopwords = {
+    "i",
+    "is",
+    "this",
+    "the",
+    "a",
+    "an",
+    "was",
+    "and",
+    "very"
+}
+
+def preprocess_text(text):
+    tokens=text.split()
+    tokens=[
+      word for word in tokens
+      if word not in stopwords
+    ]
+    return" ".join(tokens)
+df["preprocess_text"]=df['text'].apply(
+    preprocess_text
+)
+
+
+print(df[["preprocess_text","sentiment"]])
+
+X=df["preprocess_text"]
+Y=df["sentiment"]
+X_train,X_test,Y_train,Y_test=train_test_split(X,Y,test_size=0.25,random_state=42,stratify=Y)
+print("\nTraining samples:", len(X_train))
+print("Testing samples:", len(X_test))
+
+
+
+print(X_train.head())
+print(X_train.dtype)
+
+tfidf=TfidfVectorizer()
+
+X_tfidf_train=tfidf.fit_transform(X_train)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    Y,
+    test_size=0.25,
+    random_state=42,
+    stratify=Y
+)
+
+
+print("\nTraining samples:", len(X_train))
+print("Testing samples:", len(X_test))
+
+tfidf = TfidfVectorizer()
+
+X_train_tfidf = tfidf.fit_transform(X_train)
+
+X_test_tfidf = tfidf.transform(X_test)
+
+
+print("\n================ TF-IDF ================\n")
+
+print("Training TF-IDF shape:",
+      X_train_tfidf.shape)
+
+print("Testing TF-IDF shape:",
+      X_test_tfidf.shape)
+
+model=MultinomialNB()
+
+model.fit(X_train_tfidf,Y_train)
+
+model_prediction=model.predict(X_test_tfidf)
+model_accuracy_nb=accuracy_score(Y_test,model_prediction)
+model_accuracy_nb
+print("accuracy:",model_prediction)
+model_classification_nb=classification_report(Y_test,model_prediction)
+print("classification:",model_prediction)
+lg_model=LogisticRegression()
+lg_model.fit(X_train_tfidf,Y_train)
+model_prediction_lg=model.predict(X_test_tfidf)
+model_accuracy_lg=accuracy_score(Y_test,model_prediction)
+model_accuracy_lg
+print("accuracy:",model_prediction_lg)
+model_classification_lg=classification_report(y_test,model_prediction)
+print(("classification:",model_prediction_lg))
+model_svc=SVC()
+model_svc.fit(X_train_tfidf,Y_train)
+model_prediction_svc=model.predict(X_test_tfidf)
+model_accuracy_svc=accuracy_score(Y_test,model_prediction)
+model_accuracy_svc
+model_classification_svc=classification_report(Y_test,model_prediction)
+print("accracy:","classification:",model_prediction_svc)
+results=pd.DataFrame({
+    "model":[
+        "LogistiRegression",
+        "SVC",
+        "MultinomialNB"
+    ],
+    "accuracy":[
+        "LogistiRegression",
+        "SVC",
+        "MultinomialNB"
+    ]
+})
+
+
+print(results)
+best_model=results.loc[results["accuracy"].idxmax()]
+print("best_model",best_model["model"])
+print("best_accuracy",best_model["model"])
+new_text=["I really love this amazing movie",
+    "This is a terrible movie",
+    "Fantastic acting and wonderful story",
+    "Very bad and disappointing film"
+]
+new_clean=[
+    clean_text(text)
+    for text in new_text
+]
+new_preprocess=[
+    preprocess_text(text)
+    for text in new_clean
+]
+new_tfidf=tfidf.transform(
+    new_preprocess
+)
+
+model_new_prediction=model.predict(new_tfidf)
+model_new_prediction
+lg_new_prediction=model.predict(new_tfidf)
+lg_new_prediction
+model.svc_new_prediction=model.predict(new_tfidf)
+model.svc_new_prediction
+for i in range(len(new_text)):
+
+    print("Text:", new_text[i])
+
+    print(
+        "Naive Bayes:",
+        model_new_prediction[i]
+    )
+
+    print(
+        "Logistic Regression:",
+        lg_new_prediction[i]
+    )
+
+    print(
+        "SVM:",
+        model.svc_new_prediction[i]
+    )
+
+    print("----------------------------------")
